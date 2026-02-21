@@ -1,0 +1,41 @@
+name: vscode_remote_client
+description: Official Flutter client for VS Code WebSocket Bridge - Remote IDE control and synchronization
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+    sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+    flutter:
+        sdk: flutter
+
+    # State Management
+    flutter_riverpod: ^2.4.10
+
+    # WebSocket
+    web_socket_channel: ^2.4.0
+
+    # Code Editor
+    flutter_code_editor: ^0.3.3
+    flutter_highlight: ^0.7.0
+    highlight: ^0.7.0
+
+    # UI Components
+    cupertino_icons: ^1.0.6
+
+    # Utilities
+    uuid: ^4.3.3
+    path: ^1.8.3
+    shared_preferences: ^2.2.2
+
+    # Logging
+    logger: ^2.0.2+1
+
+dev_dependencies:
+    flutter_test:
+        sdk: flutter
+    flutter_lints: ^3.0.1
+
+flutter:
+    uses-material-design: true
