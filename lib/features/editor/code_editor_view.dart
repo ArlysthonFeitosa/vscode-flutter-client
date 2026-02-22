@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_code_editor/flutter_code_editor.dart';
 import 'package:flutter_highlight/themes/monokai-sublime.dart';
-import 'package:flutter_highlight/themes/github.dart';
 import 'package:highlight/highlight.dart' show Mode;
 import 'package:highlight/languages/dart.dart';
 import 'package:highlight/languages/javascript.dart';
@@ -20,6 +20,7 @@ import 'package:highlight/languages/xml.dart';
 import 'package:highlight/languages/yaml.dart';
 import 'package:highlight/languages/markdown.dart';
 import 'package:highlight/languages/sql.dart';
+import '../../core/theme/vscode_theme.dart';
 import '../../state/app_controller.dart';
 
 /// Code editor view with syntax highlighting
@@ -33,7 +34,6 @@ class CodeEditorView extends ConsumerStatefulWidget {
 class _CodeEditorViewState extends ConsumerState<CodeEditorView> {
   final Map<String, CodeController> _controllers = {};
   Timer? _saveDebouncer;
-  bool _isDarkMode = true;
 
   @override
   void dispose() {
@@ -54,118 +54,120 @@ class _CodeEditorViewState extends ConsumerState<CodeEditorView> {
     }
 
     final file = openFiles[activeFilePath]!;
-    final controller = _getOrCreateController(file.path, file.content, file.languageId);
-
-    return Column(
-      children: [
-        _buildHeader(context, file),
-        Expanded(
-          child: _buildEditor(context, controller, file),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, OpenFile file) {
-    final fileName = file.path.split('/').last;
+    final controller =
+        _getOrCreateController(file.path, file.content, file.languageId);
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        border: Border(
-          bottom: BorderSide(
-            color: Theme.of(context).dividerColor,
-          ),
-        ),
-      ),
-      child: Row(
+      color: VSCodeColors.editorBackground,
+      child: Column(
         children: [
-          Icon(
-            _getFileIcon(fileName),
-            size: 18,
-            color: _getFileIconColor(fileName),
-          ),
-          const SizedBox(width: 8),
+          // Breadcrumb bar
+          _buildBreadcrumb(file),
+          // Editor
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  fileName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  file.path,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Theme.of(context).textTheme.bodySmall?.color,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-          if (file.isModified)
-            Container(
-              width: 8,
-              height: 8,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: const BoxDecoration(
-                color: Colors.orange,
-                shape: BoxShape.circle,
-              ),
-            ),
-          IconButton(
-            icon: Icon(_isDarkMode ? Icons.light_mode : Icons.dark_mode, size: 18),
-            tooltip: 'Toggle theme',
-            onPressed: () {
-              setState(() {
-                _isDarkMode = !_isDarkMode;
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.save, size: 18),
-            tooltip: 'Save (Ctrl+S)',
-            onPressed: file.isModified ? () => _saveFile(file.path) : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.close, size: 18),
-            tooltip: 'Close',
-            onPressed: () => _closeFile(file.path),
+            child: _buildEditor(context, controller, file),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEditor(BuildContext context, CodeController controller, OpenFile file) {
+  Widget _buildBreadcrumb(OpenFile file) {
+    final parts = file.path.split(RegExp(r'[/\\]'));
+
     return Container(
-      color: _isDarkMode ? const Color(0xFF272822) : Colors.white,
+      height: 22,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      color: VSCodeColors.editorBackground,
+      child: Row(
+        children: [
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (int i = 0; i < parts.length; i++) ...[
+                    if (i > 0)
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 2),
+                        child: Icon(
+                          Icons.chevron_right,
+                          size: 14,
+                          color: VSCodeColors.sideBarForeground,
+                        ),
+                      ),
+                    Text(
+                      parts[i],
+                      style: TextStyle(
+                        color: i == parts.length - 1
+                            ? VSCodeColors.editorForeground
+                            : VSCodeColors.sideBarForeground,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ),
+          // Save indicator
+          if (file.isModified)
+            Tooltip(
+              message: 'Unsaved changes (Ctrl+S to save)',
+              child: Container(
+                width: 8,
+                height: 8,
+                margin: const EdgeInsets.only(left: 8),
+                decoration: const BoxDecoration(
+                  color: VSCodeColors.accent,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditor(
+      BuildContext context, CodeController controller, OpenFile file) {
+    return RawKeyboardListener(
+      focusNode: FocusNode(),
+      onKey: (event) {
+        // Handle Ctrl+S for save
+        if (event is RawKeyDownEvent &&
+            event.isControlPressed &&
+            event.logicalKey == LogicalKeyboardKey.keyS) {
+          _saveFile(file.path);
+        }
+      },
       child: CodeTheme(
         data: CodeThemeData(
-          styles: _isDarkMode ? monokaiSublimeTheme : githubTheme,
+          styles: monokaiSublimeTheme,
         ),
         child: SingleChildScrollView(
-          child: CodeField(
-            controller: controller,
-            textStyle: const TextStyle(
-              fontFamily: 'monospace',
-              fontSize: 14,
-            ),
-            lineNumberStyle: LineNumberStyle(
-              width: 48,
-              textStyle: TextStyle(
-                color: _isDarkMode ? Colors.grey.shade600 : Colors.grey.shade400,
-                fontSize: 12,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: IntrinsicWidth(
+              child: CodeField(
+                controller: controller,
+                textStyle: const TextStyle(
+                  fontFamily: 'Consolas, Monaco, monospace',
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+                lineNumberStyle: const LineNumberStyle(
+                  width: 50,
+                  margin: 8,
+                  textStyle: TextStyle(
+                    color: VSCodeColors.editorLineNumber,
+                    fontSize: 12,
+                    fontFamily: 'Consolas, Monaco, monospace',
+                  ),
+                ),
+                background: VSCodeColors.editorBackground,
+                expands: false,
+                wrap: false,
               ),
             ),
           ),
@@ -175,34 +177,75 @@ class _CodeEditorViewState extends ConsumerState<CodeEditorView> {
   }
 
   Widget _buildEmptyState(BuildContext context) {
-    final openFiles = ref.watch(openFilesProvider);
-
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
+    return Container(
+      color: VSCodeColors.editorBackground,
+      child: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.code,
               size: 64,
-              color: Theme.of(context).disabledColor,
+              color: VSCodeColors.sideBarForeground.withOpacity(0.3),
             ),
             const SizedBox(height: 16),
             Text(
-              openFiles.isEmpty ? 'No files open' : 'Select a file from workspace',
+              'No file open',
               style: TextStyle(
-                color: Theme.of(context).disabledColor,
+                color: VSCodeColors.sideBarForeground.withOpacity(0.5),
                 fontSize: 14,
               ),
             ),
+            const SizedBox(height: 8),
+            Text(
+              'Select a file from the explorer to start editing',
+              style: TextStyle(
+                color: VSCodeColors.sideBarForeground.withOpacity(0.3),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 24),
+            _buildShortcutHint('Ctrl+S', 'Save file'),
           ],
         ),
       ),
     );
   }
 
-  CodeController _getOrCreateController(String path, String content, String languageId) {
+  Widget _buildShortcutHint(String shortcut, String action) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+          decoration: BoxDecoration(
+            color: VSCodeColors.inputBackground,
+            borderRadius: BorderRadius.circular(3),
+            border: Border.all(color: VSCodeColors.divider),
+          ),
+          child: Text(
+            shortcut,
+            style: const TextStyle(
+              color: VSCodeColors.sideBarForeground,
+              fontSize: 11,
+              fontFamily: 'monospace',
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          action,
+          style: TextStyle(
+            color: VSCodeColors.sideBarForeground.withOpacity(0.5),
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+
+  CodeController _getOrCreateController(
+      String path, String content, String languageId) {
     if (_controllers.containsKey(path)) {
       final controller = _controllers[path]!;
 
@@ -232,9 +275,9 @@ class _CodeEditorViewState extends ConsumerState<CodeEditorView> {
     // Update local state
     ref.read(openFilesProvider.notifier).updateContent(path, newContent);
 
-    // Debounce save to VS Code
+    // Debounce auto-save
     _saveDebouncer?.cancel();
-    _saveDebouncer = Timer(const Duration(milliseconds: 1500), () {
+    _saveDebouncer = Timer(const Duration(seconds: 2), () {
       _saveFile(path);
     });
   }
@@ -242,113 +285,15 @@ class _CodeEditorViewState extends ConsumerState<CodeEditorView> {
   Future<void> _saveFile(String path) async {
     try {
       await ref.read(openFilesProvider.notifier).saveFile(path);
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('File saved'),
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to save: $e')),
+          SnackBar(
+            content: Text('Failed to save: $e'),
+            backgroundColor: VSCodeColors.errorForeground,
+          ),
         );
       }
-    }
-  }
-
-  void _closeFile(String path) {
-    final file = ref.read(openFilesProvider)[path];
-
-    if (file?.isModified ?? false) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Unsaved changes'),
-          content: const Text('Do you want to save changes before closing?'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                _controllers.remove(path)?.dispose();
-                ref.read(openFilesProvider.notifier).closeFile(path);
-              },
-              child: const Text('Discard'),
-            ),
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                Navigator.of(context).pop();
-                await _saveFile(path);
-                _controllers.remove(path)?.dispose();
-                ref.read(openFilesProvider.notifier).closeFile(path);
-              },
-              child: const Text('Save'),
-            ),
-          ],
-        ),
-      );
-    } else {
-      _controllers.remove(path)?.dispose();
-      ref.read(openFilesProvider.notifier).closeFile(path);
-    }
-  }
-
-  IconData _getFileIcon(String fileName) {
-    final ext = fileName.split('.').last.toLowerCase();
-
-    switch (ext) {
-      case 'dart':
-        return Icons.code;
-      case 'js':
-      case 'ts':
-      case 'jsx':
-      case 'tsx':
-        return Icons.javascript;
-      case 'json':
-        return Icons.data_object;
-      case 'yaml':
-      case 'yml':
-        return Icons.settings;
-      case 'md':
-        return Icons.article;
-      case 'html':
-      case 'css':
-      case 'scss':
-        return Icons.web;
-      default:
-        return Icons.insert_drive_file;
-    }
-  }
-
-  Color _getFileIconColor(String fileName) {
-    final ext = fileName.split('.').last.toLowerCase();
-
-    switch (ext) {
-      case 'dart':
-        return Colors.blue;
-      case 'js':
-      case 'ts':
-        return Colors.yellow.shade700;
-      case 'json':
-        return Colors.orange;
-      case 'md':
-        return Colors.purple;
-      case 'html':
-        return Colors.red;
-      case 'css':
-      case 'scss':
-        return Colors.blue;
-      default:
-        return Colors.grey;
     }
   }
 

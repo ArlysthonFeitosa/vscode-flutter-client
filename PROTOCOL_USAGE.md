@@ -1147,3 +1147,140 @@ This implementation provides:
 ✅ **Maintainable** - Well-documented and structured
 
 The implementation follows Flutter best practices and provides a solid foundation for a professional VS Code remote client.
+
+---
+
+## New Features Added (UI Update v2.0)
+
+### Create File
+
+**UI Action**: Click "New File" icon in the explorer header or right-click on a folder → "New File"
+
+**WebSocket Event Sent** (Client → Server):
+
+```json
+{
+    "type": "writeFile",
+    "requestId": "uuid",
+    "payload": {
+        "path": "/path/to/newfile.txt",
+        "content": "",
+        "createDirectories": true
+    }
+}
+```
+
+**Implementation Location**: `lib/features/workspace/workspace_explorer.dart`
+
+**Usage**:
+```dart
+await client.writeFile(name, '', createDirectories: true);
+```
+
+---
+
+### Create Folder/Directory
+
+**UI Action**: Click "New Folder" icon in the explorer header or right-click on a folder → "New Folder"
+
+**WebSocket Event Sent** (Client → Server):
+
+```json
+{
+    "type": "createDirectory",
+    "requestId": "uuid",
+    "payload": {
+        "path": "/path/to/newfolder"
+    }
+}
+```
+
+**Implementation Location**: `lib/features/workspace/workspace_explorer.dart`
+
+**Usage**:
+```dart
+await client.createDirectory(path);
+```
+
+---
+
+### Delete File/Folder
+
+**UI Action**: Hover over item and click delete icon, or right-click → "Delete"
+
+**WebSocket Event Sent** (Client → Server):
+
+```json
+{
+    "type": "deleteFile",
+    "requestId": "uuid",
+    "payload": {
+        "path": "/path/to/item",
+        "recursive": true
+    }
+}
+```
+
+**Note**: `recursive: true` is used for both files and directories to ensure directories with content are properly deleted.
+
+**Implementation Location**: `lib/features/workspace/workspace_explorer.dart`
+
+**Usage**:
+```dart
+await client.deleteFile(path, recursive: true);
+```
+
+---
+
+## UI/UX Changes (v2.0)
+
+### VS Code-like Layout
+
+The application now features a VS Code-inspired interface:
+
+1. **Activity Bar** (left): Icon-based navigation for Explorer, Search, and Settings
+2. **Sidebar**: File explorer tree view with collapsible folders
+3. **Tab Bar**: Open files displayed as tabs at the top
+4. **Editor Area**: Code editor with syntax highlighting and breadcrumb navigation
+5. **Status Bar**: Connection status and quick actions at the bottom
+
+### Auto-Connect on Startup
+
+The app automatically attempts to connect to the WebSocket server on startup using saved credentials from `SharedPreferences`.
+
+**Implementation Location**: `lib/main.dart` - `_initAutoConnect()`
+
+### Mobile Responsiveness
+
+- On screens < 600px width, the sidebar is replaced with a drawer
+- The status bar shows a menu button to open the drawer on mobile
+
+### New File Tree Features
+
+- **Hover actions**: Delete button appears on hover
+- **Context menu**: Right-click (or long-press on mobile) shows options
+- **Colored icons**: File icons have colors based on file type/extension
+- **Visual feedback**: Hover and selection states for tree items
+
+### Editor Improvements
+
+- **Breadcrumb navigation**: Shows file path with separator icons
+- **Auto-save**: Debounced auto-save after 2 seconds of inactivity
+- **Keyboard shortcuts**: Ctrl+S to save manually
+- **Modified indicator**: Visual indicator for unsaved changes
+
+---
+
+## Theme
+
+The app uses a custom VS Code Dark theme with authentic colors:
+
+**File**: `lib/core/theme/vscode_theme.dart`
+
+Key colors:
+- Activity Bar: `#333333`
+- Sidebar: `#252526`
+- Editor: `#1E1E1E`
+- Accent/Selection: `#007ACC`
+- Status Bar (connected): `#007ACC`
+- Status Bar (disconnected): `#6C6C6C`
