@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'features/workspace/workspace_explorer.dart';
 import 'features/editor/code_editor_view.dart';
-import 'features/terminal/terminal_view.dart';
 import 'features/settings/settings_view.dart';
 import 'state/app_controller.dart';
 
@@ -96,11 +95,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 selectedIcon: Icon(Icons.code),
                 label: Text('Editor'),
               ),
-              NavigationRailDestination(
-                icon: Icon(Icons.terminal),
-                selectedIcon: Icon(Icons.terminal),
-                label: Text('Terminal'),
-              ),
             ],
           ),
           const VerticalDivider(thickness: 1, width: 1),
@@ -126,8 +120,6 @@ class _MainScreenState extends ConsumerState<MainScreen> {
         return const WorkspaceExplorer();
       case 1:
         return const CodeEditorView();
-      case 2:
-        return const TerminalView();
       default:
         return const SizedBox();
     }

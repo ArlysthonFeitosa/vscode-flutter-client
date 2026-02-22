@@ -8,7 +8,6 @@ A professional Flutter application that serves as the official mobile/desktop cl
 - ✅ **Authentication** - Secure token-based authentication
 - ✅ **Workspace Explorer** - Browse and navigate project files
 - ✅ **Code Editor** - Full-featured editor with syntax highlighting
-- ✅ **Terminal** - Execute shell commands remotely
 - ✅ **Automatic Reconnection** - Exponential backoff reconnection strategy
 - ✅ **Bidirectional File Sync** - Edit files locally and sync to VS Code
 - ✅ **State Management** - Robust Riverpod-based architecture
@@ -31,8 +30,6 @@ lib/
 │   │   └── workspace_explorer.dart  # File tree widget
 │   ├── editor/
 │   │   └── code_editor_view.dart    # Code editor with syntax highlighting
-│   ├── terminal/
-│   │   └── terminal_view.dart       # Terminal interface
 │   └── settings/
 │       └── settings_view.dart       # Connection configuration
 ├── state/
@@ -143,18 +140,6 @@ Settings are automatically saved to local storage using `SharedPreferences`. You
 - Dart, JavaScript, TypeScript, Python, Java, Go, C/C++, C#, Ruby, PHP
 - JSON, YAML, XML, HTML, CSS, Markdown, SQL
 
-### Terminal
-
-- **Execute Commands**: Enter commands and press Enter
-- **Command History**: Navigate with up/down arrows (coming soon)
-- **Auto-scroll**: Terminal automatically scrolls to latest output
-- **Color-coded Output**:
-    - Green: Input commands
-    - White: Standard output
-    - Red: Errors
-    - Blue: Info messages
-- **Clear Terminal**: Clear button removes all output
-
 ---
 
 ## Authentication Flow
@@ -225,9 +210,6 @@ errorStreamProvider            // Error notifications
 workspaceTreeProvider          // File tree state
 openFilesProvider              // Open file documents
 activeFilePathProvider         // Currently active file
-
-// Terminal
-terminalOutputProvider         // Terminal output lines
 
 // Core
 wsClientProvider               // WebSocket client instance

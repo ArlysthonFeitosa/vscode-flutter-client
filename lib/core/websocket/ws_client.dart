@@ -38,9 +38,12 @@ class VSCodeWebSocketClient {
   final Map<String, Timer> _requestTimeouts = {};
 
   // Event stream controllers
-  final StreamController<ProtocolMessage> _messageController = StreamController<ProtocolMessage>.broadcast();
-  final StreamController<WSConnectionState> _stateController = StreamController<WSConnectionState>.broadcast();
-  final StreamController<String> _errorController = StreamController<String>.broadcast();
+  final StreamController<ProtocolMessage> _messageController =
+      StreamController<ProtocolMessage>.broadcast();
+  final StreamController<WSConnectionState> _stateController =
+      StreamController<WSConnectionState>.broadcast();
+  final StreamController<String> _errorController =
+      StreamController<String>.broadcast();
 
   // UUID generator
   final Uuid _uuid = const Uuid();
@@ -79,7 +82,9 @@ class VSCodeWebSocketClient {
 
   /// Connect to the WebSocket server and authenticate
   Future<void> connect() async {
-    if (_state == WSConnectionState.connecting || _state == WSConnectionState.authenticating || _state == WSConnectionState.connected) {
+    if (_state == WSConnectionState.connecting ||
+        _state == WSConnectionState.authenticating ||
+        _state == WSConnectionState.connected) {
       logger.w('Already connected or connecting');
       return;
     }
@@ -138,7 +143,8 @@ class VSCodeWebSocketClient {
 
   /// Send a request and wait for response
   Future<ResponseMessage> sendRequest(ProtocolMessage request) async {
-    if (_state != WSConnectionState.connected && _state != WSConnectionState.authenticating) {
+    if (_state != WSConnectionState.connected &&
+        _state != WSConnectionState.authenticating) {
       throw Exception('Not connected to server');
     }
 
@@ -167,7 +173,8 @@ class VSCodeWebSocketClient {
 
   /// Send a message without expecting a response
   void sendMessage(ProtocolMessage message) {
-    if (_state != WSConnectionState.connected && _state != WSConnectionState.authenticating) {
+    if (_state != WSConnectionState.connected &&
+        _state != WSConnectionState.authenticating) {
       logger.w('Cannot send message: not connected');
       return;
     }
@@ -251,12 +258,6 @@ class VSCodeWebSocketClient {
 
       logger.d('Received: ${message.type} (${message.requestId})');
 
-      // Log terminal events specifically for debugging
-      if (message.type == 'terminal.output' || message.type == 'terminal.completed') {
-        logger.i('Terminal event received: ${message.type}');
-        logger.d('Terminal event payload: ${message.payload}');
-      }
-
       // Handle responses to pending requests
       if (message is ResponseMessage && message.requestId != null) {
         final completer = _pendingRequests.remove(message.requestId);
@@ -295,7 +296,8 @@ class VSCodeWebSocketClient {
       _scheduleReconnect();
     } else {
       logger.e('Max reconnection attempts reached');
-      _errorController.add('Connection lost - max reconnection attempts reached');
+      _errorController
+          .add('Connection lost - max reconnection attempts reached');
     }
   }
 
@@ -313,11 +315,14 @@ class VSCodeWebSocketClient {
 
     // Exponential backoff: 2s, 4s, 8s, 16s, 32s...
     final delay = Duration(
-      milliseconds: initialReconnectDelay.inMilliseconds * (1 << (_reconnectAttempts - 1)),
+      milliseconds: initialReconnectDelay.inMilliseconds *
+          (1 << (_reconnectAttempts - 1)),
     );
-    final cappedDelay = delay > const Duration(minutes: 1) ? const Duration(minutes: 1) : delay;
+    final cappedDelay =
+        delay > const Duration(minutes: 1) ? const Duration(minutes: 1) : delay;
 
-    logger.i('Reconnecting in ${cappedDelay.inSeconds}s (attempt $_reconnectAttempts/$maxReconnectAttempts)');
+    logger.i(
+        'Reconnecting in ${cappedDelay.inSeconds}s (attempt $_reconnectAttempts/$maxReconnectAttempts)');
 
     _reconnectTimer = Timer(cappedDelay, () {
       connect();
@@ -376,7 +381,8 @@ extension VSCodeWebSocketClientExtensions on VSCodeWebSocketClient {
   }
 
   /// Write a file
-  Future<void> writeFile(String path, String content, {bool createDirectories = true}) async {
+  Future<void> writeFile(String path, String content,
+      {bool createDirectories = true}) async {
     final response = await sendRequest(WriteFileRequest(
       requestId: generateRequestId(),
       path: path,
@@ -390,7 +396,8 @@ extension VSCodeWebSocketClientExtensions on VSCodeWebSocketClient {
   }
 
   /// Open a file in VS Code
-  Future<void> openFile(String path, {bool preview = false, int viewColumn = 1}) async {
+  Future<void> openFile(String path,
+      {bool preview = false, int viewColumn = 1}) async {
     final response = await sendRequest(OpenFileRequest(
       requestId: generateRequestId(),
       path: path,
@@ -445,18 +452,12 @@ extension VSCodeWebSocketClientExtensions on VSCodeWebSocketClient {
     String command, {
     String? cwd,
     bool captureOutput = true,
-    bool? useVisibleTerminal,
-    String? terminalName,
-    bool? reuseTerminal,
   }) async {
     final response = await sendRequest(RunShellCommandRequest(
       requestId: generateRequestId(),
       command: command,
       cwd: cwd,
       captureOutput: captureOutput,
-      useVisibleTerminal: useVisibleTerminal,
-      terminalName: terminalName,
-      reuseTerminal: reuseTerminal,
     ));
 
     if (!response.success) {
@@ -482,7 +483,9 @@ extension VSCodeWebSocketClientExtensions on VSCodeWebSocketClient {
     }
 
     final treeJson = response.payload?['tree'] as List<dynamic>? ?? [];
-    return treeJson.map((node) => FileTreeNode.fromJson(node as Map<String, dynamic>)).toList();
+    return treeJson
+        .map((node) => FileTreeNode.fromJson(node as Map<String, dynamic>))
+        .toList();
   }
 
   /// Execute a VS Code command

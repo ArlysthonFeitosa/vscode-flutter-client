@@ -831,10 +831,7 @@ class OpenFileRequest extends ProtocolMessage {
     "payload": {
         "command": "npm install",
         "cwd": "/path/to/project",
-        "captureOutput": true,
-        "useVisibleTerminal": false,
-        "terminalName": "Build",
-        "reuseTerminal": true
+        "captureOutput": true
     }
 }
 ```
@@ -865,9 +862,6 @@ class RunShellCommandRequest extends ProtocolMessage {
     required String command,
     String? cwd,
     bool? captureOutput,
-    bool? useVisibleTerminal,
-    String? terminalName,
-    bool? reuseTerminal,
   }) : super(
     type: 'runShellCommand',
     requestId: requestId,
@@ -875,19 +869,10 @@ class RunShellCommandRequest extends ProtocolMessage {
       'command': command,
       if (cwd != null) 'cwd': cwd,
       if (captureOutput != null) 'captureOutput': captureOutput,
-      if (useVisibleTerminal != null) 'useVisibleTerminal': useVisibleTerminal,
-      if (terminalName != null) 'terminalName': terminalName,
-      if (reuseTerminal != null) 'reuseTerminal': reuseTerminal,
     },
   );
 }
 ```
-
-**New Terminal Parameters**:
-
-- `useVisibleTerminal` (optional): When `true`, opens a visible terminal in VS Code instead of capturing output
-- `terminalName` (optional): Custom name for the terminal (useful for identifying terminals)
-- `reuseTerminal` (optional): When `true`, reuses an existing terminal with the same name instead of creating a new one
 
 **Extension Method**:
 
@@ -896,18 +881,12 @@ Future<Map<String, dynamic>> runShellCommand(
   String command, {
   String? cwd,
   bool captureOutput = true,
-  bool? useVisibleTerminal,
-  String? terminalName,
-  bool? reuseTerminal,
 }) async {
   final response = await sendRequest(RunShellCommandRequest(
     requestId: generateRequestId(),
     command: command,
     cwd: cwd,
     captureOutput: captureOutput,
-    useVisibleTerminal: useVisibleTerminal,
-    terminalName: terminalName,
-    reuseTerminal: reuseTerminal,
   ));
 
   if (!response.success) {
@@ -918,9 +897,7 @@ Future<Map<String, dynamic>> runShellCommand(
 }
 ```
 
-**Usage Examples**:
-
-1. **Capture Output (default behavior)**:
+**Usage Example**:
 
 ```dart
 final result = await client.runShellCommand(
@@ -930,37 +907,6 @@ final result = await client.runShellCommand(
 );
 print('Exit code: ${result['exitCode']}');
 print('Output: ${result['stdout']}');
-```
-
-2. **Visible Terminal in VS Code**:
-
-```dart
-await client.runShellCommand(
-  'npm run dev',
-  cwd: '/path/to/project',
-  useVisibleTerminal: true,
-  terminalName: 'Dev Server',
-);
-```
-
-3. **Reuse Existing Terminal**:
-
-```dart
-// First command creates terminal
-await client.runShellCommand(
-  'npm install',
-  useVisibleTerminal: true,
-  terminalName: 'Build',
-  reuseTerminal: true,
-);
-
-// Second command reuses same terminal
-await client.runShellCommand(
-  'npm run build',
-  useVisibleTerminal: true,
-  terminalName: 'Build',
-  reuseTerminal: true,
-);
 ```
 
 **Location**:

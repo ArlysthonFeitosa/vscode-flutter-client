@@ -40,12 +40,9 @@ abstract class ProtocolMessage {
         return WorkspaceChangedEvent.fromJson(json);
       case 'workspace.tree':
         return WorkspaceTreeEvent.fromJson(json);
-      case 'terminal.output':
-        return TerminalOutputEvent.fromJson(json);
-      case 'terminal.completed':
-        return TerminalCompletedEvent.fromJson(json);
       default:
-        return UnknownMessage(type: type, requestId: requestId, payload: payload);
+        return UnknownMessage(
+            type: type, requestId: requestId, payload: payload);
     }
   }
 }
@@ -126,7 +123,8 @@ class AuthRequest extends ProtocolMessage {
 
 /// Ping request
 class PingRequest extends ProtocolMessage {
-  PingRequest({required String requestId}) : super(type: 'ping', requestId: requestId);
+  PingRequest({required String requestId})
+      : super(type: 'ping', requestId: requestId);
 }
 
 /// Execute VS Code command
@@ -158,7 +156,8 @@ class WriteFileRequest extends ProtocolMessage {
           payload: {
             'path': path,
             'content': content,
-            if (createDirectories != null) 'createDirectories': createDirectories,
+            if (createDirectories != null)
+              'createDirectories': createDirectories,
           },
         );
 }
@@ -240,9 +239,6 @@ class RunShellCommandRequest extends ProtocolMessage {
     required String command,
     String? cwd,
     bool? captureOutput,
-    bool? useVisibleTerminal,
-    String? terminalName,
-    bool? reuseTerminal,
   }) : super(
           type: 'runShellCommand',
           requestId: requestId,
@@ -250,9 +246,6 @@ class RunShellCommandRequest extends ProtocolMessage {
             'command': command,
             if (cwd != null) 'cwd': cwd,
             if (captureOutput != null) 'captureOutput': captureOutput,
-            if (useVisibleTerminal != null) 'useVisibleTerminal': useVisibleTerminal,
-            if (terminalName != null) 'terminalName': terminalName,
-            if (reuseTerminal != null) 'reuseTerminal': reuseTerminal,
           },
         );
 }
@@ -326,7 +319,9 @@ class DocumentChangedEvent extends ProtocolMessage {
     return DocumentChangedEvent(
       uri: payload['uri'] as String,
       fileName: payload['fileName'] as String,
-      changes: changesJson.map((c) => TextChange.fromJson(c as Map<String, dynamic>)).toList(),
+      changes: changesJson
+          .map((c) => TextChange.fromJson(c as Map<String, dynamic>))
+          .toList(),
       contentAfterChange: payload['contentAfterChange'] as String?,
     );
   }
@@ -386,7 +381,9 @@ class WorkspaceChangedEvent extends ProtocolMessage {
     final foldersJson = payload['workspaceFolders'] as List<dynamic>;
 
     return WorkspaceChangedEvent(
-      workspaceFolders: foldersJson.map((f) => WorkspaceFolder.fromJson(f as Map<String, dynamic>)).toList(),
+      workspaceFolders: foldersJson
+          .map((f) => WorkspaceFolder.fromJson(f as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -404,57 +401,9 @@ class WorkspaceTreeEvent extends ProtocolMessage {
     final treeJson = payload['tree'] as List<dynamic>;
 
     return WorkspaceTreeEvent(
-      tree: treeJson.map((n) => FileTreeNode.fromJson(n as Map<String, dynamic>)).toList(),
-    );
-  }
-}
-
-/// Terminal output event (real-time)
-class TerminalOutputEvent extends ProtocolMessage {
-  final String terminalName;
-  final String data;
-  final int timestamp;
-
-  const TerminalOutputEvent({
-    required this.terminalName,
-    required this.data,
-    required this.timestamp,
-  }) : super(type: 'terminal.output');
-
-  factory TerminalOutputEvent.fromJson(Map<String, dynamic> json) {
-    final payload = json['payload'] as Map<String, dynamic>;
-    return TerminalOutputEvent(
-      terminalName: payload['terminalName'] as String,
-      data: payload['data'] as String,
-      timestamp: payload['timestamp'] as int,
-    );
-  }
-}
-
-/// Terminal completed event
-class TerminalCompletedEvent extends ProtocolMessage {
-  final String terminalName;
-  final int exitCode;
-  final String stdout;
-  final String stderr;
-  final int timestamp;
-
-  const TerminalCompletedEvent({
-    required this.terminalName,
-    required this.exitCode,
-    required this.stdout,
-    required this.stderr,
-    required this.timestamp,
-  }) : super(type: 'terminal.completed');
-
-  factory TerminalCompletedEvent.fromJson(Map<String, dynamic> json) {
-    final payload = json['payload'] as Map<String, dynamic>;
-    return TerminalCompletedEvent(
-      terminalName: payload['terminalName'] as String,
-      exitCode: payload['exitCode'] as int,
-      stdout: payload['stdout'] as String,
-      stderr: payload['stderr'] as String,
-      timestamp: payload['timestamp'] as int,
+      tree: treeJson
+          .map((n) => FileTreeNode.fromJson(n as Map<String, dynamic>))
+          .toList(),
     );
   }
 }
@@ -580,7 +529,9 @@ class FileTreeNode {
       name: json['name'] as String,
       path: json['path'] as String,
       type: FileNodeType.fromString(json['type'] as String),
-      children: childrenJson?.map((c) => FileTreeNode.fromJson(c as Map<String, dynamic>)).toList(),
+      children: childrenJson
+          ?.map((c) => FileTreeNode.fromJson(c as Map<String, dynamic>))
+          .toList(),
     );
   }
 
@@ -588,7 +539,8 @@ class FileTreeNode {
         'name': name,
         'path': path,
         'type': type.value,
-        if (children != null) 'children': children!.map((c) => c.toJson()).toList(),
+        if (children != null)
+          'children': children!.map((c) => c.toJson()).toList(),
       };
 
   bool get isDirectory => type == FileNodeType.directory;

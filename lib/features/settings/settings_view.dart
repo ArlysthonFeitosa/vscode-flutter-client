@@ -43,7 +43,7 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
       final prefs = await SharedPreferences.getInstance();
       final host = prefs.getString('ws_host') ?? 'localhost';
       final port = prefs.getInt('ws_port') ?? 8080;
-      final token = prefs.getString('ws_token') ?? '';
+      final token = prefs.getString('ws_token') ?? 'your-secret-token-here';
 
       _hostController.text = host;
       _portController.text = port.toString();
@@ -178,12 +178,17 @@ class _SettingsViewState extends ConsumerState<SettingsView> {
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
-                            onPressed:
-                                isConnected ? () => ref.read(appControllerProvider).disconnect() : () => ref.read(appControllerProvider).connect(),
-                            icon: Icon(isConnected ? Icons.close : Icons.play_arrow),
+                            onPressed: isConnected
+                                ? () =>
+                                    ref.read(appControllerProvider).disconnect()
+                                : () =>
+                                    ref.read(appControllerProvider).connect(),
+                            icon: Icon(
+                                isConnected ? Icons.close : Icons.play_arrow),
                             label: Text(isConnected ? 'Disconnect' : 'Connect'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: isConnected ? Colors.red : Colors.green,
+                              foregroundColor:
+                                  isConnected ? Colors.red : Colors.green,
                             ),
                           ),
                         ),
